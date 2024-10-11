@@ -5,50 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Valdle</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .guess-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .guess-item {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border-radius: 4px;
-        }
-        .correct { background-color: #4ade80; }
-        .incorrect { background-color: #f87171; }
-        .neutral { background-color: #6b7280; }
-    </style>
 </head>
 <body class="bg-gray-900 text-white">
     <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
         <h1 class="text-6xl font-bold mb-8">Valdle</h1>
-        <div id="content" class="w-full max-w-md"></div>
+        <div id="content"></div>
     </div>
 
     <script>
         const app = {
             currentPage: 'home',
             currentSkin: null,
-            guesses: [],
-            maxGuesses: 6,
+            currentMap: null,
             
             skins: [
-                { name: '2ge', tier: 'Deluxe', releaseDate: '2023-02-14', color: 'Red' },
-                { name: 'Apoth', tier: 'Premium', releaseDate: '2023-08-29', color: 'Green' },
-                { name: 'Philippines', tier: 'Select', releaseDate: '2022-06-02', color: 'Blue' },
-                { name: 'Canada', tier: 'Select', releaseDate: '2022-06-02', color: 'Red' },
-                { name: 'Ignition', tier: 'Deluxe', releaseDate: '2021-07-07', color: 'Cyan' },
-                { name: 'Draco', tier: 'Premium', releaseDate: '2022-07-25', color: 'Red' },
-                { name: 'Araxys', tier: 'Premium', releaseDate: '2022-12-07', color: 'Blue' },
-                { name: 'Evil', tier: 'Deluxe', releaseDate: '2023-06-07', color: 'Green' },
-                { name: 'Team Secret', tier: 'Exclusive', releaseDate: '2022-09-13', color: 'Red' },
-                { name: 'Evil Geniuses', tier: 'Exclusive', releaseDate: '2022-09-13', color: 'Blue' },
+                { name: 'Reaver', tier: 'Premium', releaseDate: '2020-08-04', color: 'Purple' },
+                { name: 'Prime', tier: 'Exclusive', releaseDate: '2020-06-02', color: 'Gold' },
+                { name: 'Glitchpop', tier: 'Exclusive', releaseDate: '2020-08-04', color: 'Blue' },
+                { name: 'Sovereign', tier: 'Exclusive', releaseDate: '2020-06-02', color: 'Gold' },
+                { name: 'Oni', tier: 'Premium', releaseDate: '2020-07-21', color: 'Red' },
+            ],
+            
+            maps: [
+                { name: 'Ascent', image: 'https://via.placeholder.com/400x300.png?text=Ascent' },
+                { name: 'Bind', image: 'https://via.placeholder.com/400x300.png?text=Bind' },
+                { name: 'Haven', image: 'https://via.placeholder.com/400x300.png?text=Haven' },
+                { name: 'Split', image: 'https://via.placeholder.com/400x300.png?text=Split' },
+                { name: 'Icebox', image: 'https://via.placeholder.com/400x300.png?text=Icebox' },
             ],
 
             init() {
@@ -57,9 +40,6 @@
 
             setPage(page) {
                 this.currentPage = page;
-                if (page === 'guess-the-skin') {
-                    this.startNewGame();
-                }
                 this.render();
             },
 
@@ -74,11 +54,17 @@
                                 <button onclick="app.setPage('guess-the-skin')" class="block w-full px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-xl font-semibold transition duration-300">
                                     Guess the Skin
                                 </button>
+                                <button onclick="app.setPage('map-guesser')" class="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xl font-semibold transition duration-300">
+                                    Map Guesser
+                                </button>
                             </div>
                         `;
                         break;
                     case 'guess-the-skin':
                         this.renderGuessTheSkin();
+                        break;
+                    case 'map-guesser':
+                        this.renderMapGuesser();
                         break;
                 }
 
@@ -91,99 +77,75 @@
                 }
             },
 
-            startNewGame() {
-                this.currentSkin = this.skins[Math.floor(Math.random() * this.skins.length)];
-                this.guesses = [];
-            },
-
             renderGuessTheSkin() {
-                const content = document.getElementById('content');
-                let guessGridHTML = '';
-
-                for (let i = 0; i < this.maxGuesses; i++) {
-                    const guess = this.guesses[i] || { name: '', tier: '', releaseDate: '', color: '', team: '' };
-                    const rowClass = i < this.guesses.length ? '' : 'opacity-50';
-                    guessGridHTML += `
-                        <div class="guess-grid ${rowClass}">
-                            <div class="guess-item ${this.getItemClass(guess.name)}">${guess.name.substring(0, 2) || ''}</div>
-                            <div class="guess-item ${this.getItemClass(guess.tier)}">${guess.tier.substring(0, 2) || ''}</div>
-                            <div class="guess-item ${this.getItemClass(guess.releaseDate)}">${guess.releaseDate.substring(2, 4) || ''}</div>
-                            <div class="guess-item ${this.getItemClass(guess.color)}">${guess.color.substring(0, 2) || ''}</div>
-                            <div class="guess-item ${this.getItemClass(guess.team)}">${guess.team ? 'Y' : 'N'}</div>
-                        </div>
-                    `;
+                if (!this.currentSkin) {
+                    this.currentSkin = this.skins[Math.floor(Math.random() * this.skins.length)];
                 }
 
+                const content = document.getElementById('content');
                 content.innerHTML = `
-                    <div class="mb-4">
-                        <h2 class="text-2xl font-bold mb-2">Guess the Skin</h2>
-                        ${guessGridHTML}
-                    </div>
-                    <div class="mb-4 relative">
-                        <input id="skinGuess" type="text" placeholder="Enter skin name" class="w-full p-2 text-black rounded" onfocus="app.showDropdown()" onblur="app.hideDropdown()">
-                        <div id="skinDropdown" class="hidden absolute z-10 w-full bg-white border border-gray-300 max-h-60 overflow-y-auto">
-                            ${this.skins.map(skin => `<div class="p-2 hover:bg-gray-200 cursor-pointer text-black" onmousedown="app.selectSkin('${skin.name}')">${skin.name}</div>`).join('')}
+                    <div class="max-w-md mx-auto p-4">
+                        <h2 class="text-2xl font-bold mb-4">Guess the Skin</h2>
+                        <div class="mb-4">
+                            <input id="skinGuess" type="text" placeholder="Enter skin name" class="w-full p-2 text-black rounded">
                         </div>
+                        <button onclick="app.guessSkin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                            Guess
+                        </button>
+                        <div id="skinFeedback" class="mt-4"></div>
                     </div>
-                    <button onclick="app.guessSkin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                        Guess
-                    </button>
-                    <div id="skinFeedback" class="mt-4"></div>
                 `;
             },
 
-            getItemClass(value) {
-                if (!value) return 'neutral';
-                return value.toLowerCase() === this.currentSkin[value.toLowerCase()]?.toLowerCase() ? 'correct' : 'incorrect';
-            },
-
-            showDropdown() {
-                document.getElementById('skinDropdown').classList.remove('hidden');
-            },
-
-            hideDropdown() {
-                setTimeout(() => {
-                    document.getElementById('skinDropdown').classList.add('hidden');
-                }, 200);
-            },
-
-            selectSkin(skinName) {
-                document.getElementById('skinGuess').value = skinName;
-            },
-
             guessSkin() {
-                const guessInput = document.getElementById('skinGuess');
-                const guess = guessInput.value;
-                const guessedSkin = this.skins.find(skin => skin.name.toLowerCase() === guess.toLowerCase());
+                const guess = document.getElementById('skinGuess').value;
+                const feedback = document.getElementById('skinFeedback');
                 
-                if (guessedSkin) {
-                    this.guesses.push({
-                        name: guessedSkin.name,
-                        tier: guessedSkin.tier,
-                        releaseDate: guessedSkin.releaseDate,
-                        color: guessedSkin.color,
-                        team: guessedSkin.name.includes('Evil') || guessedSkin.name.includes('Team')
-                    });
-                    guessInput.value = '';
-                    
-                    if (guessedSkin.name === this.currentSkin.name || this.guesses.length === this.maxGuesses) {
-                        this.endGame();
-                    } else {
-                        this.renderGuessTheSkin();
-                    }
+                if (guess.toLowerCase() === this.currentSkin.name.toLowerCase()) {
+                    feedback.innerHTML = `Correct! The skin was ${this.currentSkin.name}.`;
+                    this.currentSkin = null;
                 } else {
-                    alert('Invalid skin name. Please choose from the dropdown.');
+                    feedback.innerHTML = `
+                        <p>Incorrect. Here are some hints:</p>
+                        <p>Tier: ${guess.toLowerCase() === this.currentSkin.tier.toLowerCase() ? 'Correct' : 'Incorrect'}</p>
+                        <p>Release Date: ${guess.toLowerCase() === this.currentSkin.releaseDate.toLowerCase() ? 'Correct' : 'Incorrect'}</p>
+                        <p>Color: ${guess.toLowerCase() === this.currentSkin.color.toLowerCase() ? 'Correct' : 'Incorrect'}</p>
+                    `;
                 }
             },
 
-            endGame() {
-                const feedback = document.getElementById('skinFeedback');
-                if (this.guesses[this.guesses.length - 1].name === this.currentSkin.name) {
-                    feedback.innerHTML = `Congratulations! You guessed the skin in ${this.guesses.length} tries.`;
-                } else {
-                    feedback.innerHTML = `Game over. The correct skin was ${this.currentSkin.name}.`;
+            renderMapGuesser() {
+                if (!this.currentMap) {
+                    this.currentMap = this.maps[Math.floor(Math.random() * this.maps.length)];
                 }
-                this.renderGuessTheSkin();
+
+                const content = document.getElementById('content');
+                content.innerHTML = `
+                    <div class="max-w-md mx-auto p-4">
+                        <h2 class="text-2xl font-bold mb-4">Map Guesser</h2>
+                        <img src="${this.currentMap.image}" alt="Map location" class="w-full rounded mb-4">
+                        <select id="mapGuess" class="w-full p-2 text-black rounded mb-4">
+                            <option value="">Select a map</option>
+                            ${this.maps.map(map => `<option value="${map.name}">${map.name}</option>`).join('')}
+                        </select>
+                        <button onclick="app.guessMap()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                            Guess Map
+                        </button>
+                        <div id="mapFeedback" class="mt-4"></div>
+                    </div>
+                `;
+            },
+
+            guessMap() {
+                const guess = document.getElementById('mapGuess').value;
+                const feedback = document.getElementById('mapFeedback');
+                
+                if (guess === this.currentMap.name) {
+                    feedback.innerHTML = `Correct! The map was ${this.currentMap.name}.`;
+                    this.currentMap = null;
+                } else {
+                    feedback.innerHTML = `Incorrect. Try again!`;
+                }
             }
         };
 
