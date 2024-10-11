@@ -3,153 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valdle</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Valdle - Valorant-themed Wordle</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f1923;
+            color: #ece8e1;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #ff4655;
+            text-align: center;
+        }
+        .game-select {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .game-button, .submit-button {
+            background-color: #ff4655;
+            color: #ece8e1;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .game-area {
+            background-color: #1f2933;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .input-area {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+        }
+        .feedback {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .map-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .minimap {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            background-color: #333;
+        }
+        .click-area {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-white">
-    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 class="text-6xl font-bold mb-8">Valdle</h1>
-        <div id="content"></div>
+<body>
+    <div class="container">
+        <h1>Valdle</h1>
+        <div id="root"></div>
     </div>
 
-    <script>
-        const app = {
-            currentPage: 'home',
-            currentSkin: null,
-            currentMap: null,
-            
-            skins: [
-                { name: 'Reaver', tier: 'Premium', releaseDate: '2020-08-04', color: 'Purple' },
-                { name: 'Prime', tier: 'Exclusive', releaseDate: '2020-06-02', color: 'Gold' },
-                { name: 'Glitchpop', tier: 'Exclusive', releaseDate: '2020-08-04', color: 'Blue' },
-                { name: 'Sovereign', tier: 'Exclusive', releaseDate: '2020-06-02', color: 'Gold' },
-                { name: 'Oni', tier: 'Premium', releaseDate: '2020-07-21', color: 'Red' },
-            ],
-            
-            maps: [
-                { name: 'Ascent', image: 'https://via.placeholder.com/400x300.png?text=Ascent' },
-                { name: 'Bind', image: 'https://via.placeholder.com/400x300.png?text=Bind' },
-                { name: 'Haven', image: 'https://via.placeholder.com/400x300.png?text=Haven' },
-                { name: 'Split', image: 'https://via.placeholder.com/400x300.png?text=Split' },
-                { name: 'Icebox', image: 'https://via.placeholder.com/400x300.png?text=Icebox' },
-            ],
+    <script type="text/babel">
+        // Mock data for the games
+        const skinData = [
+            { name: "Prime", tier: "Premium", releaseDate: "2020-06-02", color: "White" },
+            { name: "Reaver", tier: "Premium", releaseDate: "2020-11-05", color: "Purple" },
+            { name: "Glitchpop", tier: "Exclusive", releaseDate: "2020-08-04", color: "Blue" },
+        ];
 
-            init() {
-                this.render();
-            },
+        const mapData = [
+            { name: "Ascent", image: "/api/placeholder/400/300", minimap: "/api/placeholder/300/300" },
+            { name: "Bind", image: "/api/placeholder/400/300", minimap: "/api/placeholder/300/300" },
+            { name: "Haven", image: "/api/placeholder/400/300", minimap: "/api/placeholder/300/300" },
+        ];
 
-            setPage(page) {
-                this.currentPage = page;
-                this.render();
-            },
+        const GuessSkinGame = ({ onEnd }) => {
+            const [currentSkin, setCurrentSkin] = React.useState(null);
+            const [guess, setGuess] = React.useState("");
+            const [feedback, setFeedback] = React.useState("");
+            const [attempts, setAttempts] = React.useState(0);
 
-            render() {
-                const content = document.getElementById('content');
-                content.innerHTML = '';
+            React.useEffect(() => {
+                setCurrentSkin(skinData[Math.floor(Math.random() * skinData.length)]);
+            }, []);
 
-                switch (this.currentPage) {
-                    case 'home':
-                        content.innerHTML = `
-                            <div class="space-y-4">
-                                <button onclick="app.setPage('guess-the-skin')" class="block w-full px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-xl font-semibold transition duration-300">
-                                    Guess the Skin
-                                </button>
-                                <button onclick="app.setPage('map-guesser')" class="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xl font-semibold transition duration-300">
-                                    Map Guesser
-                                </button>
-                            </div>
-                        `;
-                        break;
-                    case 'guess-the-skin':
-                        this.renderGuessTheSkin();
-                        break;
-                    case 'map-guesser':
-                        this.renderMapGuesser();
-                        break;
-                }
-
-                if (this.currentPage !== 'home') {
-                    content.innerHTML += `
-                        <button onclick="app.setPage('home')" class="mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-lg font-semibold transition duration-300">
-                            Back to Home
-                        </button>
-                    `;
-                }
-            },
-
-            renderGuessTheSkin() {
-                if (!this.currentSkin) {
-                    this.currentSkin = this.skins[Math.floor(Math.random() * this.skins.length)];
-                }
-
-                const content = document.getElementById('content');
-                content.innerHTML = `
-                    <div class="max-w-md mx-auto p-4">
-                        <h2 class="text-2xl font-bold mb-4">Guess the Skin</h2>
-                        <div class="mb-4">
-                            <input id="skinGuess" type="text" placeholder="Enter skin name" class="w-full p-2 text-black rounded">
-                        </div>
-                        <button onclick="app.guessSkin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                            Guess
-                        </button>
-                        <div id="skinFeedback" class="mt-4"></div>
-                    </div>
-                `;
-            },
-
-            guessSkin() {
-                const guess = document.getElementById('skinGuess').value;
-                const feedback = document.getElementById('skinFeedback');
-                
-                if (guess.toLowerCase() === this.currentSkin.name.toLowerCase()) {
-                    feedback.innerHTML = `Correct! The skin was ${this.currentSkin.name}.`;
-                    this.currentSkin = null;
+            const handleGuess = () => {
+                setAttempts(attempts + 1);
+                if (guess.toLowerCase() === currentSkin.name.toLowerCase()) {
+                    setFeedback("Correct! You guessed the skin!");
+                    setTimeout(() => onEnd(), 2000);
                 } else {
-                    feedback.innerHTML = `
-                        <p>Incorrect. Here are some hints:</p>
-                        <p>Tier: ${guess.toLowerCase() === this.currentSkin.tier.toLowerCase() ? 'Correct' : 'Incorrect'}</p>
-                        <p>Release Date: ${guess.toLowerCase() === this.currentSkin.releaseDate.toLowerCase() ? 'Correct' : 'Incorrect'}</p>
-                        <p>Color: ${guess.toLowerCase() === this.currentSkin.color.toLowerCase() ? 'Correct' : 'Incorrect'}</p>
-                    `;
+                    const tierCorrect = guess.toLowerCase() === currentSkin.tier.toLowerCase();
+                    const colorCorrect = guess.toLowerCase() === currentSkin.color.toLowerCase();
+                    setFeedback(`Incorrect. Tier: ${tierCorrect ? "✓" : "✗"}, Color: ${colorCorrect ? "✓" : "✗"}`);
                 }
-            },
+            };
 
-            renderMapGuesser() {
-                if (!this.currentMap) {
-                    this.currentMap = this.maps[Math.floor(Math.random() * this.maps.length)];
-                }
-
-                const content = document.getElementById('content');
-                content.innerHTML = `
-                    <div class="max-w-md mx-auto p-4">
-                        <h2 class="text-2xl font-bold mb-4">Map Guesser</h2>
-                        <img src="${this.currentMap.image}" alt="Map location" class="w-full rounded mb-4">
-                        <select id="mapGuess" class="w-full p-2 text-black rounded mb-4">
-                            <option value="">Select a map</option>
-                            ${this.maps.map(map => `<option value="${map.name}">${map.name}</option>`).join('')}
-                        </select>
-                        <button onclick="app.guessMap()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                            Guess Map
-                        </button>
-                        <div id="mapFeedback" class="mt-4"></div>
+            return (
+                <div>
+                    <h2>Guess the Skin</h2>
+                    <p>Listen to the sound and guess the skin line!</p>
+                    <div className="input-area">
+                        <input 
+                            type="text" 
+                            value={guess} 
+                            onChange={(e) => setGuess(e.target.value)} 
+                            placeholder="Enter skin name"
+                        />
+                        <button className="submit-button" onClick={handleGuess}>Submit</button>
                     </div>
-                `;
-            },
-
-            guessMap() {
-                const guess = document.getElementById('mapGuess').value;
-                const feedback = document.getElementById('mapFeedback');
-                
-                if (guess === this.currentMap.name) {
-                    feedback.innerHTML = `Correct! The map was ${this.currentMap.name}.`;
-                    this.currentMap = null;
-                } else {
-                    feedback.innerHTML = `Incorrect. Try again!`;
-                }
-            }
+                    <div className="feedback">{feedback}</div>
+                </div>
+            );
         };
 
-        app.init();
+        const GeoGuesserGame = ({ onEnd }) => {
+            const [currentMap, setCurrentMap] = React.useState(null);
+            const [stage, setStage] = React.useState('guessMap');
+            const [guess, setGuess] = React.useState("");
+            const [feedback, setFeedback] = React.useState("");
+
+            React.useEffect(() => {
+                setCurrentMap(mapData[Math.floor(Math.random() * mapData.length)]);
+            }, []);
+
+            const handleMapGuess = () => {
+                if (guess.toLowerCase() === currentMap.name.toLowerCase()) {
+                    setFeedback("Correct! Now select the location on the minimap.");
+                    setStage('guessLocation');
+                } else {
+                    setFeedback("Incorrect. Try again!");
+                }
+            };
+
+            const handleLocationGuess = (e) => {
+                const rect = e.target.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                // In a real implementation, we'd check if the coordinates are correct
+                setFeedback("Location guessed! Game over.");
+                setTimeout(() => onEnd(), 2000);
+            };
+
+            return (
+                <div>
+                    <h2>Map Guesser</h2>
+                    {stage === 'guessMap' ? (
+                        <>
+                            <img src={currentMap?.image} alt="Map section" className="map-image" />
+                            <div className="input-area">
+                                <input 
+                                    type="text" 
+                                    value={guess} 
+                                    onChange={(e) => setGuess(e.target.value)} 
+                                    placeholder="Enter map name"
+                                />
+                                <button className="submit-button" onClick={handleMapGuess}>Submit</button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="minimap" onClick={handleLocationGuess}>
+                            <img src={currentMap?.minimap} alt="Minimap" className="map-image" />
+                            <div className="click-area"></div>
+                        </div>
+                    )}
+                    <div className="feedback">{feedback}</div>
+                </div>
+            );
+        };
+
+        const ResultsScreen = ({ gameType, result }) => {
+            const copyResults = () => {
+                navigator.clipboard.writeText(`I played ${gameType} on Valdle and got ${result}!`);
+            };
+
+            const shareOnX = () => {
+                const text = encodeURIComponent(`I played ${gameType} on Valdle and got ${result}!`);
+                window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+            };
+
+            return (
+                <div>
+                    <h2>Results</h2>
+                    <p>Game: {gameType}</p>
+                    <p>Result: {result}</p>
+                    <button className="game-button" onClick={copyResults}>Copy Results</button>
+                    <button className="game-button" onClick={shareOnX}>Share on X</button>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentGame, setCurrentGame] = React.useState(null);
+            const [showResults, setShowResults] = React.useState(false);
+            const [gameResult, setGameResult] = React.useState("");
+
+            const startGame = (game) => {
+                setCurrentGame(game);
+                setShowResults(false);
+            };
+
+            const endGame = () => {
+                setGameResult("Sample Result"); // In a real implementation, we'd calculate the actual result
+                setShowResults(true);
+            };
+
+            return (
+                <div>
+                    <div className="game-select">
+                        <button className="game-button" onClick={() => startGame('skin')}>Guess the Skin</button>
+                        <button className="game-button" onClick={() => startGame('map')}>Map Guesser</button>
+                    </div>
+                    <div className="game-area">
+                        {currentGame === 'skin' && !showResults && <GuessSkinGame onEnd={endGame} />}
+                        {currentGame === 'map' && !showResults && <GeoGuesserGame onEnd={endGame} />}
+                        {showResults && <ResultsScreen gameType={currentGame} result={gameResult} />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
